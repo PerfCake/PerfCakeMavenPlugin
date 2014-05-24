@@ -24,11 +24,11 @@ import org.apache.maven.plugins.annotations.Mojo;
 /**
  * 
  * @author vjuranek
- *
+ * 
  */
 @Mojo(name = "perfcake", defaultPhase = LifecyclePhase.INTEGRATION_TEST)
 public class PerfCakeMojo extends AbstractMojo {
-   
+
    public void execute() throws MojoExecutionException {
 
    }
