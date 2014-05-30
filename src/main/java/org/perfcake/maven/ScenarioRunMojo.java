@@ -71,9 +71,9 @@ public class ScenarioRunMojo extends AbstractMojo {
       args.add("-pd");
       args.add(pluginsDir);
 
-      System.out.println("Running scenario " + scenario); //TODO use log
+      getLog().info("PerfCake: Running scenario " + scenario);
       ScenarioExecution.main(args.toArray(new String[args.size()]));
-      System.out.println("DONE scenario " + scenario); //TODO use log
+      getLog().info("PerfCake: Finished scenario " + scenario);
    }
 
    private void initDefaults() {
@@ -82,16 +82,19 @@ public class ScenarioRunMojo extends AbstractMojo {
       if (scenariosDir == null || scenariosDir.trim().isEmpty()) {
          File testDir = new File(resPath + File.separator + DEFAULT_SCENARIOS_DIR);
          scenariosDir = testDir.isDirectory() ? testDir.getAbsolutePath() : resPath;
+         getLog().debug("Setting PerCake scenarios dir to " + scenariosDir);
       }
 
       if (messagesDir == null || messagesDir.trim().isEmpty()) {
          File testDir = new File(resPath + File.separator + DEFAULT_MESSAGES_DIR);
          messagesDir = testDir.isDirectory() ? testDir.getAbsolutePath() : resPath;
+         getLog().debug("Setting PerCake messages dir to " + messagesDir);
       }
 
       if (pluginsDir == null || pluginsDir.trim().isEmpty()) {
          File testDir = new File(resPath + File.separator+ DEFAULT_PLUGINS_DIR);
          pluginsDir = testDir.isDirectory() ? testDir.getAbsolutePath() : resPath;
+         getLog().debug("Setting PerCake plugins dir to " + pluginsDir);
       }
    }
 
