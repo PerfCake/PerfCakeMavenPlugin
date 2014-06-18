@@ -9,7 +9,7 @@ Configuration
 ---
 Currently plugin has only one goal `scenario-run`, which runs specified PerfCake scenario. By default which goal is executed
 in `integration-test` phase (i.e. assumes, that you deploy/start your application in `pre-integration-test` phase and 
-hut it down in `post-integration-test` phase). The only mandatory parameter is `<scenario>`, which specifies the name of 
+shut it down in `post-integration-test` phase). The only mandatory parameter is `<scenario>`, which specifies the name of 
 scenario to be run. Optionally, you can also specify `scenarios-dir`, `messages-dir` and `plugins-dir`, which speficy paths to
 directory containing scenarios, messages and plugins, respectivelly. If you don't setup these parameters, pluing assumes,
 that appropriate directories (`scenarios`, `messages`, `plugins`) are in `src/test/resources/perfcake`. If any of them doesn't
@@ -40,3 +40,13 @@ Example configuration
     </plugins>
   </build>
 ```
+
+Versioning
+----------
+
+This repository does not use any special workflow and everything is commited directly to master for now.
+
+Bug reporting
+-------------
+
+Please report bugs d irectly to the issues in this repository.
