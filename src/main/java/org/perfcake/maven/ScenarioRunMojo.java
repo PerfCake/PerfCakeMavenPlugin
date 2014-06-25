@@ -17,6 +17,10 @@ package org.perfcake.maven;
  */
 
 import java.io.File;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +32,14 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.perfcake.ScenarioExecution;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactRequest;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 /**
  * 
@@ -41,7 +52,7 @@ public class ScenarioRunMojo extends AbstractMojo {
    private final String PERFCAKE_DIR = "perfcake";
    private final String DEFAULT_SCENARIOS_DIR = PERFCAKE_DIR + File.separator + "scenarios";
    private final String DEFAULT_MESSAGES_DIR = PERFCAKE_DIR + File.separator + "messages";
-   private final String DEFAULT_PLUGINS_DIR = PERFCAKE_DIR + File.separator +  "plugins";
+   private final String DEFAULT_PLUGINS_DIR = PERFCAKE_DIR + File.separator + "plugins";
 
    @Parameter(required = true)
    private String scenario;
@@ -51,13 +62,24 @@ public class ScenarioRunMojo extends AbstractMojo {
    private String messagesDir;
    @Parameter(alias = "plugins-dir")
    private String pluginsDir;
+   @Parameter(alias = "perfcake-version")
+   private String artifactCoords;
+
+   @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
+   private List<RemoteRepository> remoteRepos;
+   @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
+   private RepositorySystemSession repoSession;
 
    @Component
    private MavenProject project;
+   @Component
+   private RepositorySystem repoSystem;
 
    public void execute() throws MojoExecutionException {
+
+
       initDefaults();
-      
+
       ArrayList<String> args = new ArrayList<String>();
       args.add("-s");
       args.add(scenario);
@@ -71,9 +93,29 @@ public class ScenarioRunMojo extends AbstractMojo {
       args.add("-pd");
       args.add(pluginsDir);
 
-      getLog().info("PerfCake: Running scenario " + scenario);
-      ScenarioExecution.main(args.toArray(new String[args.size()]));
-      getLog().info("PerfCake: Finished scenario " + scenario);
+      
+      File perfCakeJar = getPerfCakeJarFile();
+      ClassLoader currentClassLoader = this.getClass().getClassLoader();
+      URL[] urls = ((URLClassLoader) currentClassLoader).getURLs();
+      URL[] urlsPerfFirst = new URL[urls.length+1];
+      try {
+         urlsPerfFirst[0] = perfCakeJar.toURI().toURL();
+      } catch(MalformedURLException e) {
+         throw new MojoExecutionException(e.getMessage(), e);
+      }
+      System.arraycopy(urls, 0, urlsPerfFirst, 1, urls.length);
+      URLClassLoader perfFirtClassLoader = new URLClassLoader(urlsPerfFirst, currentClassLoader);
+
+      try {
+         Class<?> se = perfFirtClassLoader.loadClass("org.perfcake.ScenarioExecution");
+         Method main = se.getMethod("main", String[].class);
+         Object[] argsArray = {args.toArray(new String[args.size()])};
+         getLog().info("PerfCake: Running scenario " + scenario);
+         main.invoke(null, argsArray);
+         getLog().info("PerfCake: Finished scenario " + scenario);
+      } catch(Exception e) {
+         throw new MojoExecutionException(e.getMessage(), e);
+      }
    }
 
    private void initDefaults() {
@@ -92,7 +134,7 @@ public class ScenarioRunMojo extends AbstractMojo {
       }
 
       if (pluginsDir == null || pluginsDir.trim().isEmpty()) {
-         File testDir = new File(resPath + File.separator+ DEFAULT_PLUGINS_DIR);
+         File testDir = new File(resPath + File.separator + DEFAULT_PLUGINS_DIR);
          pluginsDir = testDir.isDirectory() ? testDir.getAbsolutePath() : resPath;
          getLog().debug("Setting PerCake plugins dir to " + pluginsDir);
       }
@@ -107,4 +149,29 @@ public class ScenarioRunMojo extends AbstractMojo {
       return defResPath;
    }
 
+   private File getPerfCakeJarFile() throws MojoExecutionException {
+      Artifact artifact = null;
+      try {
+         artifact = new DefaultArtifact(artifactCoords);
+      } catch (IllegalArgumentException e) {
+         throw new MojoExecutionException(e.getMessage(), e);
+      }
+
+      ArtifactRequest request = new ArtifactRequest();
+      request.setArtifact(artifact);
+      request.setRepositories(remoteRepos);
+
+      getLog().info("Resolving artifact " + artifact + " from " + remoteRepos);
+
+      ArtifactResult result;
+      try {
+         result = repoSystem.resolveArtifact(repoSession, request);
+      } catch (ArtifactResolutionException e) {
+         throw new MojoExecutionException(e.getMessage(), e);
+      }
+
+      getLog().info("Resolved artifact " + artifact + " to " + result.getArtifact().getFile() + " from " + result.getRepository());
+      return result.getArtifact().getFile();
+   }
+   
 }
