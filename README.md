@@ -33,7 +33,7 @@ Example configuration
         <version>0.1-SNAPSHOT</version>
         <configuration>
           <scenario>my_perfcake_scenario</scenario>
-	  <perfcake-version>2.0</perfcake-version>
+          <perfcake-version>2.0</perfcake-version>
         </configuration>
         <executions>
           <execution>
