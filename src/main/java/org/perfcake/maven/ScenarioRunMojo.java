@@ -34,12 +34,9 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.ArtifactRequest;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
+import org.perfcake.maven.utils.MavenUtils;
 
 /**
  * 
@@ -49,6 +46,7 @@ import org.eclipse.aether.resolution.ArtifactResult;
 @Mojo(name = "scenario-run", defaultPhase = LifecyclePhase.INTEGRATION_TEST)
 public class ScenarioRunMojo extends AbstractMojo {
 
+   private final String PERFCAKE_MAVEN_COORD = "org.perfcake:perfcake:";
    private final String PERFCAKE_DIR = "perfcake";
    private final String DEFAULT_SCENARIOS_DIR = PERFCAKE_DIR + File.separator + "scenarios";
    private final String DEFAULT_MESSAGES_DIR = PERFCAKE_DIR + File.separator + "messages";
@@ -63,7 +61,7 @@ public class ScenarioRunMojo extends AbstractMojo {
    @Parameter(alias = "plugins-dir")
    private String pluginsDir;
    @Parameter(alias = "perfcake-version")
-   private String artifactCoords;
+   private String perfCakeVersion;
 
    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
    private List<RemoteRepository> remoteRepos;
@@ -76,10 +74,7 @@ public class ScenarioRunMojo extends AbstractMojo {
    private RepositorySystem repoSystem;
 
    public void execute() throws MojoExecutionException {
-
-
       initDefaults();
-
       ArrayList<String> args = new ArrayList<String>();
       args.add("-s");
       args.add(scenario);
@@ -93,27 +88,22 @@ public class ScenarioRunMojo extends AbstractMojo {
       args.add("-pd");
       args.add(pluginsDir);
 
-      
-      File perfCakeJar = getPerfCakeJarFile();
-      ClassLoader currentClassLoader = this.getClass().getClassLoader();
-      URL[] urls = ((URLClassLoader) currentClassLoader).getURLs();
-      URL[] urlsPerfFirst = new URL[urls.length+1];
+      File perfCakeJar = null;
       try {
-         urlsPerfFirst[0] = perfCakeJar.toURI().toURL();
-      } catch(MalformedURLException e) {
-         throw new MojoExecutionException(e.getMessage(), e);
+         perfCakeJar = MavenUtils.getArtifactJarFile(repoSystem, remoteRepos, repoSession, PERFCAKE_MAVEN_COORD + perfCakeVersion, getLog());
+      } catch (ArtifactResolutionException e) {
+         getLog().warn("Cannot resolve PerfCake " + perfCakeVersion + ", using default one on the class path");
       }
-      System.arraycopy(urls, 0, urlsPerfFirst, 1, urls.length);
-      URLClassLoader perfFirtClassLoader = new URLClassLoader(urlsPerfFirst, currentClassLoader);
 
+      ClassLoader perfFirtClassLoader = getPerfCakeClassLoader(perfCakeJar);
       try {
          Class<?> se = perfFirtClassLoader.loadClass("org.perfcake.ScenarioExecution");
          Method main = se.getMethod("main", String[].class);
-         Object[] argsArray = {args.toArray(new String[args.size()])};
+         Object[] argsArray = { args.toArray(new String[args.size()]) };
          getLog().info("PerfCake: Running scenario " + scenario);
          main.invoke(null, argsArray);
          getLog().info("PerfCake: Finished scenario " + scenario);
-      } catch(Exception e) {
+      } catch (Exception e) {
          throw new MojoExecutionException(e.getMessage(), e);
       }
    }
@@ -149,29 +139,22 @@ public class ScenarioRunMojo extends AbstractMojo {
       return defResPath;
    }
 
-   private File getPerfCakeJarFile() throws MojoExecutionException {
-      Artifact artifact = null;
-      try {
-         artifact = new DefaultArtifact(artifactCoords);
-      } catch (IllegalArgumentException e) {
-         throw new MojoExecutionException(e.getMessage(), e);
+   private ClassLoader getPerfCakeClassLoader(File perfCakeJar) throws MojoExecutionException {
+      ClassLoader currentClassLoader = this.getClass().getClassLoader();
+      if (perfCakeJar == null) {
+         return currentClassLoader;
       }
 
-      ArtifactRequest request = new ArtifactRequest();
-      request.setArtifact(artifact);
-      request.setRepositories(remoteRepos);
-
-      getLog().info("Resolving artifact " + artifact + " from " + remoteRepos);
-
-      ArtifactResult result;
+      URL[] urls = ((URLClassLoader) currentClassLoader).getURLs();
+      URL[] urlsPerfFirst = new URL[urls.length + 1];
       try {
-         result = repoSystem.resolveArtifact(repoSession, request);
-      } catch (ArtifactResolutionException e) {
+         urlsPerfFirst[0] = perfCakeJar.toURI().toURL();
+      } catch (MalformedURLException e) {
          throw new MojoExecutionException(e.getMessage(), e);
       }
-
-      getLog().info("Resolved artifact " + artifact + " to " + result.getArtifact().getFile() + " from " + result.getRepository());
-      return result.getArtifact().getFile();
+      System.arraycopy(urls, 0, urlsPerfFirst, 1, urls.length);
+      URLClassLoader perfFirtClassLoader = new URLClassLoader(urlsPerfFirst, currentClassLoader);
+      return perfFirtClassLoader;
    }
-   
+
 }
