@@ -89,10 +89,12 @@ public class ScenarioRunMojo extends AbstractMojo {
       args.add(pluginsDir);
 
       File perfCakeJar = null;
-      try {
-         perfCakeJar = MavenUtils.getArtifactJarFile(repoSystem, remoteRepos, repoSession, PERFCAKE_MAVEN_COORD + perfCakeVersion, getLog());
-      } catch (ArtifactResolutionException e) {
-         getLog().warn("Cannot resolve PerfCake " + perfCakeVersion + ", using default one on the class path");
+      if (perfCakeVersion != null) { //if the version is not set, don't resolve anything and don't print out warning
+         try {
+            perfCakeJar = MavenUtils.getArtifactJarFile(repoSystem, remoteRepos, repoSession, PERFCAKE_MAVEN_COORD + perfCakeVersion, getLog());
+         } catch (ArtifactResolutionException e) {
+            getLog().warn("Cannot resolve PerfCake " + PERFCAKE_MAVEN_COORD + perfCakeVersion + ", using default one on the class path");
+         }
       }
 
       ClassLoader perfFirtClassLoader = getPerfCakeClassLoader(perfCakeJar);
