@@ -51,9 +51,10 @@ Example configuration
 Versioning
 ----------
 
-This repository does not use any special workflow and everything is commited directly to master for now.
+Please note that this repository follows [Git Flow](http://nvie.com/posts/a-successful-git-branching-model/) workflow.
+The development branch name is `devel`.
 
 Bug reporting
 -------------
 
-Please report bugs directly to the issues in this repository.
+Please report bugs to https://github.com/PerfCake/PerfCake/issues

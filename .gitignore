@@ -2,5 +2,7 @@
 target/
 .classpath
 .project
+.idea/
 *.class
 *~
+*.iml

@@ -1,28 +1,25 @@
-package org.perfcake.maven;
-
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- * 
+ * -----------------------------------------------------------------------\
+ * PerfCake
+ *  
+ * Copyright (C) 2010 - 2016 the original author or authors.
+ *  
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
- * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ * -----------------------------------------------------------------------/
  */
+package org.perfcake.maven;
 
-import java.io.File;
-import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.util.ArrayList;
-import java.util.List;
+import org.perfcake.maven.utils.MavenUtils;
 
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
@@ -36,12 +33,20 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.perfcake.maven.utils.MavenUtils;
+
+import java.io.File;
+import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 
+ * Maven plugin enabling execution of PerfCake scenarios.
+ *
  * @author vjuranek
- * 
+ * @author <a href="mailto:marvenec@gmail.com">Martin Večeřa</a>
  */
 @Mojo(name = "scenario-run", defaultPhase = LifecyclePhase.INTEGRATION_TEST)
 public class ScenarioRunMojo extends AbstractMojo {
@@ -65,7 +70,7 @@ public class ScenarioRunMojo extends AbstractMojo {
 
    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
    private List<RemoteRepository> remoteRepos;
-   
+
    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
    private RepositorySystemSession repoSession;
 
@@ -75,6 +80,7 @@ public class ScenarioRunMojo extends AbstractMojo {
    @Component
    private RepositorySystem repoSystem;
 
+   @Override
    public void execute() throws MojoExecutionException {
       initDefaults();
       ArrayList<String> args = new ArrayList<String>();
@@ -99,9 +105,9 @@ public class ScenarioRunMojo extends AbstractMojo {
          }
       }
 
-      ClassLoader perfFirtClassLoader = getPerfCakeClassLoader(perfCakeJar);
+      ClassLoader perfCakeClassLoader = getPerfCakeClassLoader(perfCakeJar);
       try {
-         Class<?> se = perfFirtClassLoader.loadClass("org.perfcake.ScenarioExecution");
+         Class<?> se = perfCakeClassLoader.loadClass("org.perfcake.ScenarioExecution");
          Method main = se.getMethod("main", String[].class);
          Object[] argsArray = { args.toArray(new String[args.size()]) };
          getLog().info("PerfCake: Running scenario " + scenario);
@@ -160,5 +166,4 @@ public class ScenarioRunMojo extends AbstractMojo {
       URLClassLoader perfFirtClassLoader = new URLClassLoader(urlsPerfFirst, currentClassLoader);
       return perfFirtClassLoader;
    }
-
 }
