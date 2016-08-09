@@ -65,11 +65,13 @@ public class ScenarioRunMojo extends AbstractMojo {
 
    @Parameter(defaultValue = "${project.remoteProjectRepositories}", readonly = true)
    private List<RemoteRepository> remoteRepos;
+   
    @Parameter(defaultValue = "${repositorySystemSession}", readonly = true)
    private RepositorySystemSession repoSession;
 
-   @Component
+   @Parameter(defaultValue = "${project}", readonly = true)
    private MavenProject project;
+
    @Component
    private RepositorySystem repoSystem;
 
