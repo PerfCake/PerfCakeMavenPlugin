@@ -1,3 +1,5 @@
+This repository is __deprecated__, its content has been merged to the [main PerfCake repository](https://github.com/PerfCake/PerfCake).
+
 Maven plugin for PerfCake
 =========================
 Maven plugin which allows to run [PerfCake](http://www.perfcake.org) scenarion within Maven build. This makes perfomance test 
